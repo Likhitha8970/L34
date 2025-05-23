@@ -18,5 +18,4 @@ int main() {
     cout << "Accessing public member a: " << obj.a << endl;
     return 0;
 }
-```
-
+ithis is a cpp program
