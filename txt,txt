@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - Diet and Fitness Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/heroicons@2.0.18/dist/heroicons.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-image: url('data:image/svg+xml,%3Csvg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%239C92AC" fill-opacity="0.1"%3E%3Cpath d="M0 0h1v1H0zM19 19h1v1h-1z"/%3E%3C/g%3E%3C/svg%3E');
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        button {
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4 sm:p-6">
+    <div class="container bg-white rounded-xl shadow-xl p-8 max-w-5xl w-full">
+        <h1 class="text-4xl font-bold text-white bg-gradient-to-r from-teal-500 to-blue-600 py-4 px-6 rounded-lg mb-8 text-center">User Profile - Diet and Fitness Tracker</h1>
+
+        <!-- User Profile Section -->
+        <div class="mb-12 p-6 bg-gray-50 rounded-xl shadow-lg animate-fade-in">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                <svg class="w-6 h-6 mr-2 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                User Profile
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <input type="text" id="username" placeholder="Username" class="p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-700">
+                <input type="number" id="age" placeholder="Age" class="p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-700">
+                <input type="number" id="height" placeholder="Height (cm)" class="p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-700">
+                <input type="number" id="weight" placeholder="Weight (kg)" class="p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-700">
+                <select id="gender" class="p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-700">
+                    <option value="" disabled selected>Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                </select>
+                <input type="number" id="calorieGoal" placeholder="Daily Calorie Goal" class="p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-700">
+            </div>
+            <div class="mt-6 flex space-x-4">
+                <button onclick="saveProfile()" class="bg-gradient-to-r from-teal-500 to-blue-600 text-white px-6 py-3 rounded-md hover:bg-teal-600">Save Profile</button>
+                <button onclick="clearAllData()" class="bg-red-500 text-white px-6 py-3 rounded-md hover:bg-red-600">Clear All Data</button>
+            </div>
+            <div id="profileError" class="text-red-400 text-sm mt-3"></div>
+            <div id="profileDisplay" class="mt-6 text-gray-700 leading-relaxed"></div>
+        </div>
+    </div>
+
+    <script>
+        console.log("User Profile Module Initialized");
+
+        class UserProfile {
+            constructor() {
+                this.profile = null;
+                this.loadProfile();
+            }
+
+            validateProfile(username, age, height, weight, gender, calorieGoal) {
+                let errors = [];
+                if (!username || username.length < 3) {
+                    errors.push("Username must be at least 3 characters.");
+                }
+                if (!age || age < 18 || age > 120) {
+                    errors.push("Age must be between 18 and 120.");
+                }
+                if (!height || height < 100 || height > 250) {
+                    errors.push("Height must be between 100 and 250 cm.");
+                }
+                if (!weight || weight < 30 || weight > 300) {
+                    errors.push("Weight must be between 30 and 300 kg.");
+                }
+                if (!gender) {
+                    errors.push("Gender is required.");
+                }
+                if (!calorieGoal || calorieGoal < 1000 || calorieGoal > 5000) {
+                    errors.push("Calorie goal must be between 1000 and 5000.");
+                }
+                return errors;
+            }
+
+            calculateBMI(height, weight) {
+                try {
+                    const heightInMeters = height / 100;
+                    const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(2);
+                    return isNaN(bmi) ? "N/A" : bmi;
+                } catch (e) {
+                    console.error("BMI calculation error:", e);
+                    return "N/A";
+                }
+            }
+
+            saveProfile(username, age, height, weight, gender, calorieGoal) {
+                const errors = this.validateProfile(username, age, height, weight, gender, calorieGoal);
+                if (errors.length > 0) {
+                    document.getElementById("profileError").innerText = errors.join(" ");
+                    return false;
+                }
+                try {
+                    this.profile = {
+                        username,
+                        age: parseInt(age),
+                        height: parseFloat(height),
+                        weight: parseFloat(weight),
+                        gender,
+                        calorieGoal: parseInt(calorieGoal),
+                        bmi: this.calculateBMI(height, weight)
+                    };
+                    localStorage.setItem("userProfile", JSON.stringify(this.profile));
+                    this.displayProfile();
+                    document.getElementById("profileError").innerText = "";
+                    return true;
+                } catch (e) {
+                    console.error("Profile save error:", e);
+                    document.getElementById("profileError").innerText = "Failed to save profile. Check browser settings.";
+                    return false;
+                }
+            }
+
+            loadProfile() {
+                try {
+                    const profileData = localStorage.getItem("userProfile");
+                    if (profileData) {
+                        this.profile = JSON.parse(profileData);
+                        this.displayProfile();
+                    }
+                } catch (e) {
+                    console.error("Profile load error:", e);
+                    document.getElementById("profileError").innerText = "Failed to load profile. Clear browser data and try again.";
+                }
+            }
+
+            displayProfile() {
+                const displayDiv = document.getElementById("profileDisplay");
+                if (this.profile) {
+                    displayDiv.innerHTML = `
+                        <p><strong>Username:</strong> ${this.profile.username}</p>
+                        <p><strong>Age:</strong> ${this.profile.age}</p>
+                        <p><strong>Height:</strong> ${this.profile.height} cm</p>
+                        <p><strong>Weight:</strong> ${this.profile.weight} kg</p>
+                        <p><strong>Gender:</strong> ${this.profile.gender}</p>
+                        <p><strong>BMI:</strong> ${this.profile.bmi}</p>
+                        <p><strong>Daily Calorie Goal:</strong> ${this.profile.calorieGoal}</p>
+                    `;
+                } else {
+                    displayDiv.innerHTML = "<p>No profile data available.</p>";
+                }
+            }
+
+            clearAllData() {
+                try {
+                    if (confirm("Are you sure you want to clear all data? This cannot be undone.")) {
+                        localStorage.removeItem("userProfile");
+                        this.profile = null;
+                        this.displayProfile();
+                        document.getElementById("profileError").innerText = "Profile data cleared.";
+                    }
+                } catch (e) {
+                    console.error("Clear data error:", e);
+                    document.getElementById("profileError").innerText = "Failed to clear data.";
+                }
+            }
+        }
+
+        const userProfile = new UserProfile();
+
+        function saveProfile() {
+            const username = document.getElementById("username").value.trim();
+            const age = document.getElementById("age").value;
+            const height = document.getElementById("height").value;
+            const weight = document.getElementById("weight").value;
+            const gender = document.getElementById("gender").value;
+            const calorieGoal = document.getElementById("calorieGoal").value;
+            userProfile.saveProfile(username, age, height, weight, gender, calorieGoal);
+        }
+
+        function clearAllData() {
+            userProfile.clearAllData();
+        }
+    </script>
+</body>
+</html> Member 1 sagar doing user profile
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Logger - Diet and Fitness Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/heroicons@2.0.18/dist/heroicons.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-image: url('data:image/svg+xml,%3Csvg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%239C92AC" fill-opacity="0.1"%3E%3Cpath d="M0 0h1v1H0zM19 19h1v1h-1z"/%3E%3C/g%3E%3C/svg%3E');
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        button {
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        table tr {
+            transition: background-color 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4 sm:p-6">
+    <div class="container bg-white rounded-xl shadow-xl p-8 max-w-5xl w-full">
+        <h1 class="text-4xl font-bold text-white bg-gradient-to-r from-teal-500 to-blue-600 py-4 px-6 rounded-lg mb-8 text-center">Food Logger - Diet and Fitness Tracker</h1>
+
+        <!-- Food Intake Section -->
+        <div class="mb-12 p-6 bg-gray-50 rounded-xl shadow-lg animate-fade-in">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                <svg class="w-6 h-6 mr-2 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                Log Food Intake
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <select id="foodSelect" onchange="fillFoodDetails()" class="p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-700">
+                    <option value="" selected>Custom Food</option>
+                    <option value="Apple">Apple</option>
+                    <option value="Banana">Banana</option>
+                    <option value="Rice">Rice</option>
+                    <option value="Bread">Bread</option>
+                    <option value="Egg">Egg</option>
+                    <option value="Chicken">Chicken</option>
+                    <option value="Milk">Milk</option>
+                    <option value="Orange">Orange</option>
+                </select>
+                <input type="text" id="foodName" placeholder="Food Name" class="p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-700">
+                <input type="number" id="foodCalories" placeholder="Calories" class="p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-700">
+                <input type="number" id="foodProtein" placeholder="Protein (g)" class="p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-700">
+                <input type="number" id="foodCarbs" placeholder="Carbs (g)" class="p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-700">
+                <input type="number" id="foodFats" placeholder="Fats (g)" class="p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-700">
+                <input type="date" id="foodDate" class="p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-700">
+            </div>
+            <button onclick="logFood()" class="mt-6 bg-gradient-to-r from-teal-500 to-blue-600 text-white px-6 py-3 rounded-md hover:bg-teal-600">Log Food</button>
+            <div id="foodError" class="text-red-400 text-sm mt-3"></div>
+            <div class="overflow-x-auto mt-6">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-teal-100 text-gray-700">
+                            <th class="border border-gray-200 p-3 text-left">Date</th>
+                            <th class="border border-gray-200 p-3 text-left">Food</th>
+                            <th class="border border-gray-200 p-3 text-left">Calories</th>
+                            <th class="border border-gray-200 p-3 text-left">Protein (g)</th>
+                            <th class="border border-gray-200 p-3 text-left">Carbs (g)</th>
+                            <th class="border border-gray-200 p-3 text-left">Fats (g)</th>
+                            <th class="border border-gray-200 p-3 text-left">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="foodTableBody" class="text-gray-600"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log("Food Logger Module Initialized");
+
+        const foodData = {
+            "Apple": { calories: 95, protein: 0.5, carbs: 25, fats: 0.2 },
+            "Banana": { calories: 120, protein: 1.2, carbs: 30, fats: 0.3 },
+            "Rice": { calories: 200, protein: 4, carbs: 45, fats: 0.5 },
+            "Bread": { calories: 80, protein: 3, carbs: 15, fats: 1 },
+            "Egg": { calories: 70, protein: 6, carbs: 1, fats: 5 },
+            "Chicken": { calories: 165, protein: 31, carbs: 0, fats: 3.6 },
+            "Milk": { calories: 120, protein: 8, carbs: 12, fats: 5 },
+            "Orange": { calories: 85, protein: 1, carbs: 21, fats: 0.2 }
+        };
+
+        class FoodLogger {
+            constructor() {
+                this.foodLogs = [];
+                this.loadFoodLogs();
+            }
+
+            validateFood(foodName, calories, protein, carbs, fats, date) {
+                let errors = [];
+                if (!foodName || foodName.length < 2) {
+                    errors.push("Food name must be at least 2 characters.");
+                }
+                if (!calories || calories < 0 || calories > 2000) {
+                    errors.push("Calories must be between 0 and 2000.");
+                }
+                if (protein && (protein < 0 || protein > 500)) {
+                    errors.push("Protein must be between 0 and 500 grams.");
+                }
+                if (carbs && (carbs < 0 || carbs > 500)) {
+                    errors.push("Carbs must be between 0 and 500 grams.");
+                }
+                if (fats && (fats < 0 || fats > 500)) {
+                    errors.push("Fats must be between 0 and 500 grams.");
+                }
+                if (!date) {
+                    errors.push("Date is required.");
+                }
+                return errors;
+            }
+
+            logFood(foodName, calories, protein, carbs, fats, date) {
+                const errors = this.validateFood(foodName, calories, protein, carbs, fats, date);
+                if (errors.length > 0) {
+                    document.getElementById("foodError").innerText = errors.join(" ");
+                    return false;
+                }
+                try {
+                    const foodEntry = {
+                        id: Date.now(),
+                        foodName,
+                        calories: parseInt(calories),
+                        protein: protein ? parseFloat(protein) : 0,
+                        carbs: carbs ? parseFloat(carbs) : 0,
+                        fats: fats ? parseFloat(fats) : 0,
+                        date
+                    };
+                    this.foodLogs.push(foodEntry);
+                    localStorage.setItem("foodLogs", JSON.stringify(this.foodLogs));
+                    this.displayFoodLogs();
+                    document.getElementById("foodError").innerText = "";
+                    return true;
+                } catch (e) {
+                    console.error("Food logging error:", e);
+                    document.getElementById("foodError").innerText = "Failed to log food. Check browser settings.";
+                    return false;
+                }
+            }
+
+            deleteFoodLog(id) {
+                try {
+                    this.foodLogs = this.foodLogs.filter(log => log.id !== id);
+                    localStorage.setItem("foodLogs", JSON.stringify(this.foodLogs));
+                    this.displayFoodLogs();
+                } catch (e) {
+                    console.error("Food delete error:", e);
+                    document.getElementById("foodError").innerText = "Failed to delete food log.";
+                }
+            }
+
+            loadFoodLogs() {
+                try {
+                    const logs = localStorage.getItem("foodLogs");
+                    if (logs) {
+                        const parsedLogs = JSON.parse(logs);
+                        if (Array.isArray(parsedLogs)) {
+                            this.foodLogs = parsedLogs.map(log => ({
+                                id: log.id || Date.now(),
+                                foodName: log.foodName || "Unknown",
+                                calories: parseInt(log.calories) || 0,
+                                protein: parseFloat(log.protein) || 0,
+                                carbs: parseFloat(log.carbs) || 0,
+                                fats: parseFloat(log.fats) || 0,
+                                date: log.date || new Date().toISOString().split("T")[0]
+                            }));
+                            localStorage.setItem("foodLogs", JSON.stringify(this.foodLogs));
+                            this.displayFoodLogs();
+                        } else {
+                            throw new Error("Invalid food logs format");
+                        }
+                    }
+                } catch (e) {
+                    console.error("Food logs load error:", e);
+                    document.getElementById("foodError").innerText = "Failed to load food logs. Data cleared to prevent errors.";
+                    localStorage.removeItem("foodLogs");
+                    this.foodLogs = [];
+                    this.displayFoodLogs();
+                }
+            }
+
+            displayFoodLogs() {
+                const tableBody = document.getElementById("foodTableBody");
+                tableBody.innerHTML = "";
+                this.foodLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
+                this.foodLogs.forEach(log => {
+                    const row = document.createElement("tr");
+                    row.className = "odd:bg-gray-100";
+                    row.innerHTML = `
+                        <td class="border border-gray-200 p-3">${log.date}</td>
+                        <td class="border border-gray-200 p-3">${log.foodName}</td>
+                        <td class="border border-gray-200 p-3">${log.calories}</td>
+                        <td class="border border-gray-200 p-3">${log.protein}</td>
+                        <td class="border border-gray-200 p-3">${log.carbs}</td>
+                        <td class="border border-gray-200 p-3">${log.fats}</td>
+                        <td class="border border-gray-200 p-3"><button class="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition-all duration-300" onclick="foodLogger.deleteFoodLog(${log.id})">Delete</button></td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+        }
+
+        const foodLogger = new FoodLogger();
+
+        function fillFoodDetails() {
+            const foodSelect = document.getElementById("foodSelect").value;
+            const foodNameInput = document.getElementById("foodName");
+            const caloriesInput = document.getElementById("foodCalories");
+            const proteinInput = document.getElementById("foodProtein");
+            const carbsInput = document.getElementById("foodCarbs");
+            const fatsInput = document.getElementById("foodFats");
+
+            if (foodSelect && foodData[foodSelect]) {
+                foodNameInput.value = foodSelect;
+                caloriesInput.value = foodData[foodSelect].calories;
+                proteinInput.value = foodData[foodSelect].protein;
+                carbsInput.value = foodData[foodSelect].carbs;
+                fatsInput.value = foodData[foodSelect].fats;
+            } else {
+                foodNameInput.value = "";
+                caloriesInput.value = "";
+                proteinInput.value = "";
+                carbsInput.value = "";
+                fatsInput.value = "";
+            }
+        }
+
+        function logFood() {
+            const foodName = document.getElementById("foodName").value.trim();
+            const calories = document.getElementById("foodCalories").value;
+            const protein = document.getElementById("foodProtein").value;
+            const carbs = document.getElementById("foodCarbs").value;
+            const fats = document.getElementById("foodFats").value;
+            const date = document.getElementById("foodDate").value;
+            foodLogger.logFood(foodName, calories, protein, carbs, fats, date);
+        }
+    </script>
+</body>
+</html> member 2 Niharika food logger
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exercise Logger - Diet and Fitness Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/heroicons@2.0.18/dist/heroicons.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-image: url('data:image/svg+xml,%3Csvg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%239C92AC" fill-opacity="0.1"%3E%3Cpath d="M0 0h1v1H0zM19 19h1v1h-1z"/%3E%3C/g%3E%3C/svg%3E');
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        button {
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        table tr {
+            transition: background-color 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4 sm:p-6">
+    <div class="container bg-white rounded-xl shadow-xl p-8 max-w-5xl w-full">
+        <h1 class="text-4xl font-bold text-white bg-gradient-to-r from-teal-500 to-blue-600 py-4 px-6 rounded-lg mb-8 text-center">Exercise Logger - Diet and Fitness Tracker</h1>
+
+        <!-- Exercise Section -->
+        <div class="mb-12 p-6 bg-gray-50 rounded-xl shadow-lg animate-fade-in">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                <svg class="w-6 h-6 mr-2 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                Log Exercise
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <select id="exerciseSelect" onchange="fillExerciseDetails()" class="p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-700">
+                    <option value="" selected>Custom Exercise</option>
+                    <option value="Walking">Walking</option>
+                    <option value="Running">Running</option>
+                    <option value="Cycling">Cycling</option>
+                    <option value="Swimming">Swimming</option>
+                    <option value="Yoga">Yoga</option>
+                    <option value="Weight Lifting">Weight Lifting</option>
+                    <option value="Jump Rope">Jump Rope</option>
+                </select>
+                <input type="text" id="exerciseName" placeholder="Exercise Name" class="p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-700">
+                <input type="number" id="exerciseDuration" placeholder="Duration (minutes)" oninput="fillExerciseDetails()" class="p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-700">
+                <input type="number" id="exerciseCalories" placeholder="Calories Burned" class="p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-700">
+                <input type="date" id="exerciseDate" class="p-3 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-700">
+            </div>
+            <button onclick="logExercise()" class="mt-6 bg-gradient-to-r from-teal-500 to-blue-600 text-white px-6 py-3 rounded-md hover:bg-teal-600">Log Exercise</button>
+            <div id="exerciseError" class="text-red-400 text-sm mt-3"></div>
+            <div class="overflow-x-auto mt-6">
+                <table class="w-full border-collapse">
+                    <thead>
+                        <tr class="bg-teal-100 text-gray-700">
+                            <th class="border border-gray-200 p-3 text-left">Date</th>
+                            <th class="border border-gray-200 p-3 text-left">Exercise</th>
+                            <th class="border border-gray-200 p-3 text-left">Duration (min)</th>
+                            <th class="border border-gray-200 p-3 text-left">Calories Burned</th>
+                            <th class="border border-gray-200 p-3 text-left">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="exerciseTableBody" class="text-gray-600"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log("Exercise Logger Module Initialized");
+
+        const exerciseData = {
+            "Walking": 5,
+            "Running": 10,
+            "Cycling": 8,
+            "Swimming": 9,
+            "Yoga": 4,
+            "Weight Lifting": 6,
+            "Jump Rope": 12
+        };
+
+        class ExerciseLogger {
+            constructor() {
+                this.exerciseLogs = [];
+                this.loadExerciseLogs();
+            }
+
+            validateExercise(exerciseName, duration, calories, date) {
+                let errors = [];
+                if (!exerciseName || exerciseName.length < 2) {
+                    errors.push("Exercise name must be at least 2 characters.");
+                }
+                if (!duration || duration < 1 || duration > 300) {
+                    errors.push("Duration must be between 1 and 300 minutes.");
+                }
+                if (!calories || calories < 0 || calories > 2000) {
+                    errors.push("Calories burned must be between 0 and 2000.");
+                }
+                if (!date) {
+                    errors.push("Date is required.");
+                }
+                return errors;
+            }
+
+            logExercise(exerciseName, duration, calories, date) {
+                const errors = this.validateExercise(exerciseName, duration, calories, date);
+                if (errors.length > 0) {
+                    document.getElementById("exerciseError").innerText = errors.join(" ");
+                    return false;
+                }
+                try {
+                    const exerciseEntry = {
+                        id: Date.now(),
+                        exerciseName,
+                        duration: parseInt(duration),
+                        calories: parseInt(calories),
+                        date
+                    };
+                    this.exerciseLogs.push(exerciseEntry);
+                    localStorage.setItem("exerciseLogs", JSON.stringify(this.exerciseLogs));
+                    this.displayExerciseLogs();
+                    document.getElementById("exerciseError").innerText = "";
+                    return true;
+                } catch (e) {
+                    console.error("Exercise logging error:", e);
+                    document.getElementById("exerciseError").innerText = "Failed to log exercise. Check browser settings.";
+                    return false;
+                }
+            }
+
+            deleteExerciseLog(id) {
+                try {
+                    this.exerciseLogs = this.exerciseLogs.filter(log => log.id !== id);
+                    localStorage.setItem("exerciseLogs", JSON.stringify(this.exerciseLogs));
+                    this.displayExerciseLogs();
+                } catch (e) {
+                    console.error("Exercise delete error:", e);
+                    document.getElementById("exerciseError").innerText = "Failed to delete exercise log.";
+                }
+            }
+
+            loadExerciseLogs() {
+                try {
+                    const logs = localStorage.getItem("exerciseLogs");
+                    if (logs) {
+                        this.exerciseLogs = JSON.parse(logs);
+                        this.displayExerciseLogs();
+                    }
+                } catch (e) {
+                    console.error("Exercise logs load error:", e);
+                    document.getElementById("exerciseError").innerText = "Failed to load exercise logs. Clear browser data and try again.";
+                }
+            }
+
+            displayExerciseLogs() {
+                const tableBody = document.getElementById("exerciseTableBody");
+                tableBody.innerHTML = "";
+                this.exerciseLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
+                this.exerciseLogs.forEach(log => {
+                    const row = document.createElement("tr");
+                    row.className = "odd:bg-gray-100";
+                    row.innerHTML = `
+                        <td class="border border-gray-200 p-3">${log.date}</td>
+                        <td class="border border-gray-200 p-3">${log.exerciseName}</td>
+                        <td class="border border-gray-200 p-3">${log.duration}</td>
+                        <td class="border border-gray-200 p-3">${log.calories}</td>
+                        <td class="border border-gray-200 p-3"><button class="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition-all duration-300" onclick="exerciseLogger.deleteExerciseLog(${log.id})">Delete</button></td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+        }
+
+        const exerciseLogger = new ExerciseLogger();
+
+        function fillExerciseDetails() {
+            const exerciseSelect = document.getElementById("exerciseSelect").value;
+            const exerciseNameInput = document.getElementById("exerciseName");
+            const durationInput = document.getElementById("exerciseDuration").value;
+            const caloriesInput = document.getElementById("exerciseCalories");
+
+            if (exerciseSelect && exerciseData[exerciseSelect] && durationInput) {
+                exerciseNameInput.value = exerciseSelect;
+                caloriesInput.value = Math.round(exerciseData[exerciseSelect] * parseInt(durationInput));
+            } else {
+                exerciseNameInput.value = "";
+                caloriesInput.value = "";
+            }
+        }
+
+        function logExercise() {
+            const exerciseName = document.getElementById("exerciseName").value.trim();
+            const duration = document.getElementById("exerciseDuration").value;
+            const calories = document.getElementById("exerciseCalories").value;
+            const date = document.getElementById("exerciseDate").value;
+            exerciseLogger.logExercise(exerciseName, duration, calories, date);
+        }
+    </script>
+</body>
+</html> member 3 exercise logger nishmitha
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress Tracker - Diet and Fitness Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/heroicons@2.0.18/dist/heroicons.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-image: url('data:image/svg+xml,%3Csvg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%239C92AC" fill-opacity="0.1"%3E%3Cpath d="M0 0h1v1H0zM19 19h1v1h-1z"/%3E%3C/g%3E%3C/svg%3E');
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        button {
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4 sm:p-6">
+    <div class="container bg-white rounded-xl shadow-xl p-8 max-w-5xl w-full">
+        <h1 class="text-4xl font-bold text-white bg-gradient-to-r from-teal-500 to-blue-600 py-4 px-6 rounded-lg mb-8 text-center">Progress Tracker - Diet and Fitness Tracker</h1>
+
+        <!-- Progress Section -->
+        <div class="mb-12 p-6 bg-gray-50 rounded-xl shadow-lg animate-fade-in">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+                <svg class="w-6 h-6 mr-2 text-teal-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 012-2h2a2 2 0 012 2v12a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                Progress Report
+            </h2>
+            <button onclick="showProgress()" class="bg-gradient-to-r from-teal-500 to-blue-600 text-white px-6 py-3 rounded-md hover:bg-teal-600">Generate Report</button>
+            <div id="progressReport" class="mt-6 text-gray-700 leading-relaxed"></div>
+            <canvas id="calorieChart" class="mt-6"></canvas>
+        </div>
+    </div>
+
+    <script>
+        console.log("Progress Tracker Module Initialized");
+
+        // Placeholder dependencies (for standalone testing)
+        const foodLogger = {
+            getCaloriesForDate: () => 0,
+            getMacrosForDate: () => ({ protein: 0, carbs: 0, fats: 0 })
+        };
+        const exerciseLogger = {
+            getCaloriesBurnedForDate: () => 0
+        };
+        const userProfile = {
+            profile: { calorieGoal: 2000, bmi: "N/A" }
+        };
+
+        class ProgressTracker {
+            constructor() {
+                this.chart = null;
+            }
+
+            generateReport() {
+                try {
+                    const today = new Date().toISOString().split("T")[0];
+                    const foodCalories = foodLogger.getCaloriesForDate(today);
+                    const exerciseCalories = exerciseLogger.getCaloriesBurnedForDate(today);
+                    const netCalories = foodCalories - exerciseCalories;
+                    const calorieGoal = userProfile.profile ? userProfile.profile.calorieGoal : 0;
+                    const macros = foodLogger.getMacrosForDate(today);
+
+                    let report = <h3 class="text-xl font-semibold text-gray-800">Daily Progress Report (${today})</h3>;
+                    report += <p class="mt-2"><strong>Calories Consumed:</strong> ${foodCalories}</p>;
+                    report += <p><strong>Calories Burned:</strong> ${exerciseCalories}</p>;
+                    report += <p><strong>Net Calories:</strong> ${netCalories}</p>;
+                    if (calorieGoal > 0) {
+                        report += <p><strong>Calorie Goal:</strong> ${calorieGoal}</p>;
+                        report += <p><strong>Goal Status:</strong> ${netCalories <= calorieGoal ? "Met" : "Not Met"} (${Math.abs(netCalories - calorieGoal)} ${netCalories > calorieGoal ? "over" : "under"})</p>;
+                    }
+                    if (userProfile.profile && userProfile.profile.bmi !== "N/A") {
+                        report += <p><strong>BMI:</strong> ${userProfile.profile.bmi}</p>;
+                    }
+                    report += <h4 class="text-lg font-medium mt-4 text-gray-800">Macronutrient Breakdown</h4>;
+                    report += <p><strong>Protein:</strong> ${macros.protein.toFixed(1)} g</p>;
+                    report += <p><strong>Carbs:</strong> ${macros.carbs.toFixed(1)} g</p>;
+                    report += <p><strong>Fats:</strong> ${macros.fats.toFixed(1)} g</p>;
+                    return report;
+                } catch (e) {
+                    console.error("Report generation error:", e);
+                    return "<p class='text-red-400'>Error generating report.</p>";
+                }
+            }
+
+            generateChart() {
+                try {
+                    const ctx = document.getElementById("calorieChart").getContext("2d");
+                    const labels = [];
+                    const foodData = [];
+                    const exerciseData = [];
+                    const netData = [];
+
+                    for (let i = 6; i >= 0; i--) {
+                        const date = new Date();
+                        date.setDate(date.getDate() - i);
+                        const dateString = date.toISOString().split("T")[0];
+                        labels.push(dateString);
+                        foodData.push(foodLogger.getCaloriesForDate(dateString));
+                        exerciseData.push(exerciseLogger.getCaloriesBurnedForDate(dateString));
+                        netData.push(foodData[foodData.length - 1] - exerciseData[exerciseData.length - 1]);
+                    }
+
+                    if (this.chart) {
+                        this.chart.destroy();
+                    }
+
+                    this.chart = new Chart(ctx, {
+                        type: "bar",
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: "Calories Consumed",
+                                    data: foodData,
+                                    backgroundColor: "rgba(75, 192, 192, 0.5)",
+                                    borderColor: "rgba(75, 192, 192, 1)",
+                                    borderWidth: 1
+                                },
+                                {
+                                    label: "Calories Burned",
+                                    data: exerciseData,
+                                    backgroundColor: "rgba(255, 99, 132, 0.5)",
+                                    borderColor: "rgba(255, 99, 132, 1)",
+                                    borderWidth: 1
+                                },
+                                {
+                                    label: "Net Calories",
+                                    data: netData,
+                                    backgroundColor: "rgba(54, 162, 235, 0.5)",
+                                    borderColor: "rgba(54, 162, 235, 1)",
+                                    borderWidth: 1
+                                }
+                            ]
+                        },
+                        options: {
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: "Calories",
+                                        font: { family: 'Poppins', size: 14, weight: '600' }
+                                    }
+                                },
+                                x: {
+                                    title: {
+                                        display: true,
+                                        text: "Date",
+                                        font: { family: 'Poppins', size: 14, weight: '600' }
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    position: "top",
+                                    labels: { font: { family: 'Poppins', size: 12 } }
+                                },
+                                title: {
+                                    display: true,
+                                    text: "Calorie Intake and Expenditure (Last 7 Days)",
+                                    font: { family: 'Poppins', size: 16, weight: '600' }
+                                }
+                            }
+                        }
+                    });
+                } catch (e) {
+                    console.error("Chart generation error:", e);
+                    document.getElementById("progressReport").innerHTML += "<p class='text-red-400'>Error generating chart. Ensure Chart.js is loaded.</p>";
+                }
+            }
+
+            showProgress() {
+                const reportDiv = document.getElementById("progressReport");
+                reportDiv.innerHTML = this.generateReport();
+                this.generateChart();
+            }
+        }
+
+        const progressTracker = new ProgressTracker();
+
+        function showProgress() {
+            progressTracker.showProgress();
+        }
+    </script>
+</body>
+</html> 
